@@ -10,3 +10,4 @@ description: A Go server implementation for applications
 | 目录结构、项目布局、`internal`/`pkg` 划分、`main.go` 职责、`app/srv.go`、目录规范、外部依赖选型 | @references/software.md |
 | 创建对象、`NewXXXClient`、Option 模式、`With*` 函数、接口定义、客户端封装 | @references/object.md |
 | 设计模式、七大原则、OCP/SRP/DIP/ISP、单例/工厂/构建者/代理/装饰器/策略/观察者/责任链/命令/模板方法 | @references/pattern.md |
+| HTTP handler、middleware、Pipeline 骨架、ErrorMapper、反单一 Service 聚合、Facade/Decorator/Strategy/Template Method 组合 | @references/handler.md |

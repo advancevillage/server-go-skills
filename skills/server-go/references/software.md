@@ -71,3 +71,35 @@ project/
 - `internal/` 子包之间通过接口通信，避免循环依赖
 - 配置结构体定义在 `conf/` 对应的 Go 文件或 `internal/config/` 中，`main.go` 解析后注入
 - 服务优雅退出逻辑在 `app/srv.go` 中统一处理（`signal.NotifyContext` + shutdown hook）
+
+---
+
+## pkg/ 扁平布局
+
+- `pkg/` 下统一为单一 `package`（与目录同名），不引入子目录
+- 通过文件名区分内容：`const.go` / `resp.go` / `<resource>.go`
+- 强领域分隔时再考虑独立子目录
+
+---
+
+## internal/ 资源命名
+
+- 子目录使用资源全名，避免缩写
+- 命名对齐对外暴露的资源边界，如 `/v1/sessions` ↔ `internal/session`
+- ✅ `internal/session` / `internal/account` / `internal/version`
+- ❌ `internal/ses` / `internal/acc` / `internal/ver`
+
+---
+
+## 常量集中：pkg/const.go
+
+`pkg/const.go` 是常量唯一入口，承载：
+
+- HTTP Header / Cookie 字段名
+- 业务错误码字符串枚举
+- 上下文（ctx）字段名
+- 缓存 key 前缀、资源 ID 前缀
+- 默认时长、限流阈值等数值
+- 错误 sentinel（`var Err... = errors.New(...)`）
+
+`internal/` 子包不在自己包内重复定义这些常量，统一从 `pkg` 引用。
