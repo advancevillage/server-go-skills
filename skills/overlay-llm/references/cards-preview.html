@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OLAIP 卡片样式预览</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 14px;
+    background: #f0f0f0;
+    color: #1a1a1a;
+    min-height: 100vh;
+  }
+
+  /* ── 顶部导航 ── */
+  .navbar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: #fff;
+    border-bottom: 1px solid #e5e5e5;
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+  .navbar-brand {
+    font-size: 13px;
+    font-weight: 600;
+    color: #333;
+    white-space: nowrap;
+  }
+  .navbar-brand span {
+    font-family: monospace;
+    background: #f0f0f0;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 11px;
+    color: #555;
+    margin-left: 6px;
+  }
+  .nav-links {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .nav-links a {
+    font-size: 11px;
+    font-family: monospace;
+    color: #666;
+    text-decoration: none;
+    padding: 3px 8px;
+    border-radius: 4px;
+    border: 1px solid #e0e0e0;
+    background: #fafafa;
+    transition: background 0.15s;
+  }
+  .nav-links a:hover { background: #e8e8e8; color: #333; }
+
+  /* ── 主区域 ── */
+  .chat-area {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 32px 20px 64px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* ── 气泡通用 ── */
+  .bubble-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  .bubble {
+    position: relative;
+    background: #fff;
+    border-radius: 4px 16px 16px 16px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.08), 0 0 0 1px rgba(0,0,0,.04);
+    padding: 14px 16px;
+    max-width: 640px;
+    width: 100%;
+    word-break: break-word;
+  }
+  .card-tag {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    font-family: monospace;
+    font-size: 10px;
+    color: #bbb;
+    user-select: none;
+  }
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #aaa;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  /* ── chat.text ── */
+  .text-body { line-height: 1.65; color: #222; }
+
+  /* ── chat.titled ── */
+  .titled-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #111;
+    margin-bottom: 8px;
+    padding-right: 72px;
+  }
+  .titled-text { line-height: 1.65; color: #333; }
+
+  /* ── chat.sectioned ── */
+  .sectioned-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #111;
+    margin-bottom: 14px;
+    padding-right: 72px;
+  }
+  .section-item { display: flex; gap: 10px; margin-bottom: 12px; }
+  .section-item:last-child { margin-bottom: 0; }
+  .section-dot {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #f0f0f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    color: #666;
+    margin-top: 1px;
+  }
+  .section-content {}
+  .section-heading {
+    font-size: 13px;
+    font-weight: 600;
+    color: #222;
+    margin-bottom: 3px;
+  }
+  .section-text { font-size: 13px; color: #555; line-height: 1.6; }
+
+  /* ── chat.highlight ── */
+  .highlight-text { line-height: 1.65; color: #333; margin-bottom: 10px; }
+  .highlight-block {
+    background: #fffbe6;
+    border-left: 3px solid #f0a500;
+    border-radius: 0 6px 6px 0;
+    padding: 10px 12px;
+    font-size: 13px;
+    color: #7a5800;
+    line-height: 1.6;
+  }
+
+  /* ── chat.tip ── */
+  .tip-text { line-height: 1.65; color: #333; margin-bottom: 10px; }
+  .tip-block {
+    border-radius: 0 6px 6px 0;
+    padding: 10px 12px;
+    font-size: 13px;
+    line-height: 1.6;
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+  }
+  .tip-block.warning {
+    background: #fffbe6;
+    border-left: 3px solid #f0a500;
+    color: #7a5800;
+  }
+  .tip-block.error {
+    background: #fff2f0;
+    border-left: 3px solid #e34234;
+    color: #8b1a10;
+  }
+  .tip-icon { flex-shrink: 0; font-size: 14px; line-height: 1.5; }
+
+  /* ── chat.table ── */
+  .table-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #111;
+    margin-bottom: 12px;
+    padding-right: 72px;
+  }
+  .card-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .card-table th {
+    background: #f0f0f0;
+    color: #555;
+    font-weight: 600;
+    padding: 7px 10px;
+    text-align: left;
+    border-bottom: 1px solid #e0e0e0;
+    white-space: nowrap;
+  }
+  .card-table td {
+    padding: 7px 10px;
+    border-bottom: 1px solid #f0f0f0;
+    color: #333;
+  }
+  .card-table tr:nth-child(even) td { background: #fafafa; }
+  .card-table tr:hover td { background: #f5f5f5; }
+  .card-table tr.footer-row td {
+    background: #f0f0f0;
+    font-weight: 600;
+    color: #222;
+    border-top: 1px solid #ddd;
+    border-bottom: none;
+  }
+  .table-caption {
+    margin-top: 8px;
+    font-size: 11px;
+    color: #aaa;
+  }
+  .val-pos { color: #16a34a; font-weight: 500; }
+  .val-neg { color: #dc2626; font-weight: 500; }
+  .val-neu { color: #888; }
+
+  /* ── chat.math ── */
+  .math-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #111;
+    margin-bottom: 8px;
+    padding-right: 72px;
+  }
+  .math-text { line-height: 1.65; color: #333; margin-bottom: 14px; }
+  .math-formula {
+    background: #f8f8f8;
+    border-radius: 8px;
+    padding: 18px 16px;
+    text-align: center;
+    overflow-x: auto;
+    margin-bottom: 10px;
+  }
+  .math-note {
+    font-size: 12px;
+    color: #888;
+    line-height: 1.6;
+  }
+  .math-steps { display: flex; flex-direction: column; gap: 10px; }
+  .math-step { display: flex; gap: 12px; align-items: flex-start; }
+  .step-label {
+    flex-shrink: 0;
+    font-size: 11px;
+    font-weight: 600;
+    color: #888;
+    padding-top: 14px;
+    width: 56px;
+    text-align: right;
+  }
+  .step-formula {
+    flex: 1;
+    background: #f8f8f8;
+    border-radius: 8px;
+    padding: 14px 16px;
+    text-align: center;
+    overflow-x: auto;
+  }
+  .math-divider {
+    border: none;
+    border-top: 1px solid #ececec;
+    margin: 16px 0;
+  }
+
+  /* ── 分组标题 ── */
+  .group-header {
+    font-size: 11px;
+    font-weight: 700;
+    color: #aaa;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    padding: 0 2px;
+    margin-top: 8px;
+  }
+</style>
+</head>
+<body>
+
+<!-- 导航 -->
+<nav class="navbar">
+  <div class="navbar-brand">OLAIP <span>模型交互协议</span></div>
+  <div class="nav-links">
+    <a href="#chat-text">chat.text</a>
+    <a href="#chat-titled">chat.titled</a>
+    <a href="#chat-sectioned">chat.sectioned</a>
+    <a href="#chat-highlight">chat.highlight</a>
+    <a href="#chat-tip">chat.tip</a>
+    <a href="#chat-table">chat.table</a>
+    <a href="#chat-math">chat.math</a>
+  </div>
+</nav>
+
+<div class="chat-area">
+
+  <!-- ───────────────────────────── chat.text ── -->
+  <div class="group-header" id="chat-text">chat.text</div>
+  <div class="bubble-wrap">
+    <div class="bubble">
+      <span class="card-tag">card:chat.text</span>
+      <div class="text-body">你好！有什么可以帮你的吗？</div>
+    </div>
+  </div>
+
+  <div class="bubble-wrap">
+    <div class="bubble">
+      <span class="card-tag">card:chat.text</span>
+      <div class="text-body">光合作用发生在叶绿体中，植物利用光能将二氧化碳和水转化为葡萄糖并释放氧气。这是地球上绝大多数生命能量的最终来源。</div>
+    </div>
+  </div>
+
+  <!-- ───────────────────────────── chat.titled ── -->
+  <div class="group-header" id="chat-titled">chat.titled</div>
+  <div class="bubble-wrap">
+    <div class="bubble">
+      <span class="card-tag">card:chat.titled</span>
+      <div class="titled-title">光合作用是什么？</div>
+      <div class="titled-text">光合作用是植物利用阳光将二氧化碳和水转化为葡萄糖和氧气的过程，发生在叶绿体中。这一过程是地球上几乎所有生命能量的最终来源，也是大气中氧气的主要来源。</div>
+    </div>
+  </div>
+
+  <!-- ───────────────────────────── chat.sectioned ── -->
+  <div class="group-header" id="chat-sectioned">chat.sectioned</div>
+  <div class="bubble-wrap">
+    <div class="bubble">
+      <span class="card-tag">card:chat.sectioned</span>
+      <div class="sectioned-title">如何提高睡眠质量</div>
+      <div class="section-item">
+        <div class="section-dot">1</div>
+        <div class="section-content">
+          <div class="section-heading">规律作息</div>
+          <div class="section-text">每天同一时间入睡和起床，帮助身体建立稳定的生物钟节律。</div>
+        </div>
+      </div>
+      <div class="section-item">
+        <div class="section-dot">2</div>
+        <div class="section-content">
+          <div class="section-heading">睡前环境</div>
+          <div class="section-text">保持房间黑暗、安静、凉爽，睡前一小时避免使用手机和电脑。</div>
+        </div>
+      </div>
+      <div class="section-item">
+        <div class="section-dot">3</div>
+        <div class="section-content">
+          <div class="section-heading">避免刺激物</div>
+          <div class="section-text">咖啡因在体内半衰期约 6 小时，下午三点后建议不再摄入咖啡或浓茶。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ───────────────────────────── chat.highlight ── -->
+  <div class="group-header" id="chat-highlight">chat.highlight</div>
+  <div class="bubble-wrap">
+    <div class="bubble">
+      <span class="card-tag">card:chat.highlight</span>
+      <div class="highlight-text">根据你描述的症状来看，最可能的原因是睡眠不足导致的注意力下降，与饮食或运动关系不大。</div>
+      <div class="highlight-block">建议每晚保证 7–8 小时睡眠，坚持两周后再观察变化，无需额外补充营养品。</div>
+    </div>
+  </div>
+
+  <!-- ───────────────────────────── chat.tip ── -->
+  <div class="group-header" id="chat-tip">chat.tip</div>
+  <div class="bubble-wrap">
+    <div class="bubble">
+      <span class="card-tag">card:chat.tip · emotion:warning</span>
+      <div class="tip-text">这道题的解法方向有点偏，乘法分配律在这里并不适用。</div>
+      <div class="tip-block warning">
+        <span class="tip-icon">💡</span>
+        <span>试着先通分，把两个分数化为相同分母，再进行加减运算。</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="bubble-wrap">
+    <div class="bubble">
+      <span class="card-tag">card:chat.tip · emotion:error</span>
+      <div class="tip-text">检测到你的代码存在 SQL 注入风险，请勿直接拼接用户输入到查询语句中。</div>
+      <div class="tip-block error">
+        <span class="tip-icon">⚠️</span>
+        <span>请使用参数化查询（Prepared Statement）替代字符串拼接，这是防止注入攻击的基本要求。</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ───────────────────────────── chat.table ── -->
+  <div class="group-header" id="chat-table">chat.table</div>
+  <div class="bubble-wrap">
+    <div class="bubble">
+      <span class="card-tag">card:chat.table</span>
+      <div class="table-title">2024 年各季度营收对比</div>
+      <table class="card-table">
+        <thead>
+          <tr>
+            <th>季度</th>
+            <th>营收（万）</th>
+            <th>环比增长</th>
+            <th>备注</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Q1</td>
+            <td>1,200</td>
+            <td><span class="val-neu">—</span></td>
+            <td>基准期</td>
+          </tr>
+          <tr>
+            <td>Q2</td>
+            <td>1,450</td>
+            <td><span class="val-pos">↑ +20.8%</span></td>
+            <td>新品上线</td>
+          </tr>
+          <tr>
+            <td>Q3</td>
+            <td>1,380</td>
+            <td><span class="val-neg">↓ −4.8%</span></td>
+            <td>促销减少</td>
+          </tr>
+          <tr>
+            <td>Q4</td>
+            <td>1,890</td>
+            <td><span class="val-pos">↑ +36.9%</span></td>
+            <td>双十一拉动</td>
+          </tr>
+          <tr class="footer-row">
+            <td>全年合计</td>
+            <td>5,920</td>
+            <td><span class="val-pos">↑ +32.4%</span></td>
+            <td>—</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="table-caption">数据来源：内部财务系统</div>
+    </div>
+  </div>
+
+  <!-- ───────────────────────────── chat.math ── -->
+  <div class="group-header" id="chat-math">chat.math</div>
+
+  <!-- 单公式 -->
+  <div class="bubble-wrap">
+    <div class="bubble">
+      <span class="card-tag">card:chat.math</span>
+      <div class="math-title">求解一元二次方程</div>
+      <div class="math-text">对于标准形式的一元二次方程，可以用求根公式直接求解：</div>
+      <div class="math-formula" id="formula-1"></div>
+      <div class="math-note">其中 a ≠ 0，判别式 Δ = b² − 4ac 决定根的类型：Δ &gt; 0 两实根，Δ = 0 重根，Δ &lt; 0 无实根。</div>
+    </div>
+  </div>
+
+  <!-- 多步推导 -->
+  <div class="bubble-wrap">
+    <div class="bubble">
+      <span class="card-tag">card:chat.math</span>
+      <div class="math-title">欧拉公式推导</div>
+      <div class="math-text">通过泰勒展开，可以将指数函数与三角函数联系起来：</div>
+      <div class="math-steps">
+        <div class="math-step">
+          <div class="step-label">展开</div>
+          <div class="step-formula" id="formula-2a"></div>
+        </div>
+        <div class="math-step">
+          <div class="step-label">分组</div>
+          <div class="step-formula" id="formula-2b"></div>
+        </div>
+        <div class="math-step">
+          <div class="step-label">代入</div>
+          <div class="step-formula" id="formula-2c"></div>
+        </div>
+        <div class="math-step">
+          <div class="step-label">结论</div>
+          <div class="step-formula" id="formula-2d"></div>
+        </div>
+      </div>
+      <hr class="math-divider">
+      <div class="math-note">令 θ = π，即得 e<sup>iπ</sup> + 1 = 0，被誉为数学中最美的公式。</div>
+    </div>
+  </div>
+
+</div><!-- /chat-area -->
+
+<script>
+  const R = katex.render.bind(katex);
+  const opts = { throwOnError: false, displayMode: true };
+
+  R("x = \\dfrac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}", document.getElementById("formula-1"), opts);
+
+  R("e^{i\\theta} = 1 + i\\theta + \\frac{(i\\theta)^2}{2!} + \\frac{(i\\theta)^3}{3!} + \\cdots",
+    document.getElementById("formula-2a"), opts);
+
+  R("e^{i\\theta} = \\left(1 - \\frac{\\theta^2}{2!} + \\frac{\\theta^4}{4!} - \\cdots\\right) + i\\left(\\theta - \\frac{\\theta^3}{3!} + \\frac{\\theta^5}{5!} - \\cdots\\right)",
+    document.getElementById("formula-2b"), opts);
+
+  R("e^{i\\theta} = \\cos\\theta + i\\sin\\theta",
+    document.getElementById("formula-2c"), opts);
+
+  R("\\boxed{e^{i\\theta} = \\cos\\theta + i\\sin\\theta}",
+    document.getElementById("formula-2d"), opts);
+</script>
+</body>
+</html>
